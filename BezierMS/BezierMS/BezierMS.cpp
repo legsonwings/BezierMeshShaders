@@ -1,16 +1,16 @@
 #include "stdafx.h"
 #include "BezierMS.h"
+#include "BezierFileIO.h"
 
+#include <cstddef>
 #include <cmath>
 #include <iterator>
-#include <chrono> 
 
 const wchar_t* BezierMS::ampShaderFilename = L"BezierAS.cso";
 const wchar_t* BezierMS::meshShaderFilename = L"BezierMS.cso";
 const wchar_t* BezierMS::pixelShaderFilename = L"BezierPS.cso";
 
 using namespace std;
-using namespace std::chrono;
 using namespace  DirectX::SimpleMath;
 
 BezierMS::BezierMS(UINT width, UINT height, std::wstring name)
@@ -30,7 +30,6 @@ BezierMS::BezierMS(UINT width, UINT height, std::wstring name)
 void BezierMS::OnInit()
 {
     m_camera.Init({ 0, 0, 10.f });
-    m_camera.SetMoveSpeed(1.f);
 
     LoadPipeline();
     LoadAssets();
@@ -224,7 +223,7 @@ void BezierMS::LoadAssets()
     {
         struct 
         { 
-            byte* data; 
+            std::byte* data; 
             uint32_t size; 
         } ampShader, meshShader, pixelShader;
 
@@ -283,18 +282,13 @@ void BezierMS::LoadAssets()
 
 void BezierMS::LoadGeometry()
 {
-    TriangularBezierPatch& topRightFrontOctant = m_shape.Patches[0];
+    auto& topRightFrontOctant = m_shape.Patches[0];
 
-    // Quadratic approximation(not a very good one) of octant of a sphere using triangular patch
-    topRightFrontOctant = { {
-            {0.f, 1.f, 0.f},
-            {0.f, 0.914f, 0.914f}, {0.914f, 0.914f, 0.f},
-            {0.f, 0.f, 1.f}, {0.914f, 0.f, 0.914f}, {1.f, 0.f, 0.f}
-        } };
+    topRightFrontOctant = BezierFileIO::ReadFromFile<decltype(m_shape)::GetDegree()>(GetAssetFullPath(L"..\\..\\scene\\TopRightFront.bez"));
 
-    size_t const vbSizeInBytes = _countof(topRightFrontOctant.controlPoints) * sizeof(TriangularBezierPatch::ControlPoint);
+    size_t const vbSizeInBytes = _countof(topRightFrontOctant.ControlPoints) * sizeof(BezierMaths::ControlPoint);
     m_vertices.reserve(vbSizeInBytes);
-    std::copy(std::begin(m_shape.Patches[0].controlPoints), std::end(m_shape.Patches[0].controlPoints), back_inserter(m_vertices));
+    std::copy(std::begin(m_shape.Patches[0].ControlPoints), std::end(m_shape.Patches[0].ControlPoints), back_inserter(m_vertices));
 
     auto vbDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
     
@@ -305,7 +299,7 @@ void BezierMS::LoadGeometry()
 
    m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
    m_vertexBufferView.SizeInBytes = static_cast<UINT>(vbSizeInBytes);
-   m_vertexBufferView.StrideInBytes = sizeof(TriangularBezierPatch::ControlPoint);
+   m_vertexBufferView.StrideInBytes = sizeof(BezierMaths::ControlPoint);
 
    // Create vertex resource on the upload heap
    ComPtr<ID3D12Resource> vertexBufferUpload;
@@ -381,7 +375,7 @@ void BezierMS::OnUpdate()
     XMStoreFloat4x4(&m_constantBufferData.World, XMMatrixTranspose(world));
     XMStoreFloat4x4(&m_constantBufferData.WorldView, XMMatrixTranspose(world * view));
     XMStoreFloat4x4(&m_constantBufferData.WorldViewProj, XMMatrixTranspose(world * view * proj));
-    m_constantBufferData.NumPatches = m_shape.NumPatches;
+    m_constantBufferData.NumPatches = m_shape.GetNumPatchs();
     m_constantBufferData.NumTesselationRowsPerPatch = tessellationFactor;
     m_constantBufferData.NumTrianglesPerPatch = m_constantBufferData.NumTesselationRowsPerPatch * m_constantBufferData.NumTesselationRowsPerPatch;
 

@@ -10,6 +10,7 @@
 //*********************************************************
 
 #pragma once
+#include <cstddef>
 #include <stdexcept>
 
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
@@ -65,7 +66,7 @@ inline void GetAssetsPath(_Out_writes_(pathSize) WCHAR* path, UINT pathSize)
     }
 }
 
-inline HRESULT ReadDataFromFile(LPCWSTR filename, byte** data, UINT* size)
+inline HRESULT ReadDataFromFile(LPCWSTR filename, std::byte** data, UINT* size)
 {
     using namespace Microsoft::WRL;
 
@@ -98,7 +99,7 @@ inline HRESULT ReadDataFromFile(LPCWSTR filename, byte** data, UINT* size)
         throw std::exception();
     }
 
-    *data = reinterpret_cast<byte*>(malloc(fileInfo.EndOfFile.LowPart));
+    *data = reinterpret_cast<std::byte*>(malloc(fileInfo.EndOfFile.LowPart));
     *size = fileInfo.EndOfFile.LowPart;
 
     if (!ReadFile(file.Get(), *data, fileInfo.EndOfFile.LowPart, nullptr, nullptr))
@@ -109,7 +110,7 @@ inline HRESULT ReadDataFromFile(LPCWSTR filename, byte** data, UINT* size)
     return S_OK;
 }
 
-inline HRESULT ReadDataFromDDSFile(LPCWSTR filename, byte** data, UINT* offset, UINT* size)
+inline HRESULT ReadDataFromDDSFile(LPCWSTR filename, std::byte** data, UINT* offset, UINT* size)
 {
     if (FAILED(ReadDataFromFile(filename, data, size)))
     {

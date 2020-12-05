@@ -74,6 +74,9 @@
     <ClInclude Include="SimpleMath.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="BezierFileIO.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BezierAS.hlsl">

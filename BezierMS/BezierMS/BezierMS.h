@@ -70,12 +70,12 @@ private:
     UINT64 m_fenceValues[FrameCount];
     
     D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-    std::vector<TriangularBezierPatch::ControlPoint> m_vertices;
+    std::vector<BezierMaths::ControlPoint> m_vertices;
     
     bool m_wireFrameToggle = false;
     std::pair<unsigned int, unsigned int> m_tessellationFactors = { 2, 32 };
     float m_adaptiveTessellationRange = 8.f;
-    BezierShape m_shape;
+    BezierMaths::BezierShape<2, 1> m_shape;
 
     void LoadPipeline();
     void LoadAssets();

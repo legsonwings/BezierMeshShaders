@@ -19,7 +19,7 @@ SimpleCamera::SimpleCamera():
     m_pitch(0.0f),
     m_lookDirection(0, 0, -1),
     m_upDirection(0, 1, 0),
-    m_moveSpeed(20.0f),
+    m_moveSpeed(10.0f),
     m_turnSpeed(XM_PIDIV2),
     m_keysPressed{}
 {
