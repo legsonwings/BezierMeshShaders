@@ -90,7 +90,7 @@ Triangle GetTriangle(uint patchIdx, uint patchTriIdx)
 
     // Note : This branch is bad for performance due to divergence and thread warp size
     // Note : Some divisions in lerp "t" calculations are integer on purpose
-    // Every second triangle in a layer is inverted
+    // Every second triangle in a row is inverted
     if (rowTriIdx % 2 == 0)
     {
         // Skip inverted triangles when calculating interpolation t which do not contribute in change of horizontal(uw) parameter span

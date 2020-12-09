@@ -69,7 +69,6 @@ private:
     ComPtr<ID3D12Fence> m_fence;
     UINT64 m_fenceValues[FrameCount];
     
-    D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
     std::vector<BezierMaths::ControlPoint> m_vertices;
     
     bool m_wireFrameToggle = false;

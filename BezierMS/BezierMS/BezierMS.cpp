@@ -287,19 +287,14 @@ void BezierMS::LoadGeometry()
     topRightFrontOctant = BezierFileIO::ReadFromFile<decltype(m_shape)::GetDegree()>(GetAssetFullPath(L"..\\..\\scene\\TopRightFront.bez"));
 
     size_t const vbSizeInBytes = _countof(topRightFrontOctant.ControlPoints) * sizeof(BezierMaths::ControlPoint);
-    m_vertices.reserve(vbSizeInBytes);
+    m_vertices.reserve(topRightFrontOctant.NumControlPoints);
     std::copy(std::begin(m_shape.Patches[0].ControlPoints), std::end(m_shape.Patches[0].ControlPoints), back_inserter(m_vertices));
 
     auto vbDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
     
-    // Are the resource states indicative of how resources will be used by GPU?
     // Create vertex buffer on the default heap
     auto defaultHeapDesc = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     ThrowIfFailed(m_device->CreateCommittedResource(&defaultHeapDesc, D3D12_HEAP_FLAG_NONE, &vbDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(m_vertexBuffer.ReleaseAndGetAddressOf())));
-
-   m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-   m_vertexBufferView.SizeInBytes = static_cast<UINT>(vbSizeInBytes);
-   m_vertexBufferView.StrideInBytes = sizeof(BezierMaths::ControlPoint);
 
    // Create vertex resource on the upload heap
    ComPtr<ID3D12Resource> vertexBufferUpload;

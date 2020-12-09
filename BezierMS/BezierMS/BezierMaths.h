@@ -61,17 +61,22 @@ namespace BezierMaths
             return (N - j) * (N - j + 1) / 2 + k;
         }
 
+        static constexpr unsigned To1D(unsigned j, unsigned k)
+        {
+            // N - j gives us row index
+            return (N - j) * (N - j + 1) / 2 + k;
+        }
+
         static constexpr TriangularIndex From1D(unsigned idx1D)
         {
             // Determine which row the control point belongs to
-            // Derivation of the expression in references
             // Add a very small tolerance to account for potential FP inaccuracies
             float const temp = (sqrt((static_cast<float>(idx1D) + 1.f) * 8.f + 1.f) - 1.f) / 2.0f - 0.000001f;
 
             // Convert to 0 based index
             unsigned const row = static_cast<unsigned>(BezierMaths::ceil(temp)) - 1u;
 
-            // This will give the index of starting vertex of the layer
+            // This will give the index of starting vertex of the row
             // Number of vertices till layer n(0-based) is n(n+1)/2
             unsigned const rowStartVertex = (row) * (row + 1) / 2;
 
@@ -153,9 +158,9 @@ namespace BezierMaths
             for (int i = 0; i < subpatch.NumControlPoints; ++i)
             {
                 auto const& idx = TriangularIndex<N - 1u>::From1D(i);
-                subpatch.ControlPoints[i] = ControlPoints[TriangularIndex<N>(idx.i + 1, idx.j, idx.k).To1D()] * uvw.x +
-                    ControlPoints[TriangularIndex<N>(idx.i, idx.j + 1, idx.k).To1D()] * uvw.y +
-                    ControlPoints[TriangularIndex<N>(idx.i, idx.j, idx.k + 1).To1D()] * uvw.z;
+                subpatch.ControlPoints[i] = ControlPoints[TriangularIndex<N>::To1D(idx.j, idx.k)] * uvw.x +
+                                            ControlPoints[TriangularIndex<N>::To1D(idx.j + 1, idx.k)] * uvw.y +
+                                            ControlPoints[TriangularIndex<N>::To1D(idx.j, idx.k + 1)] * uvw.z;
             }
 
             return Decasteljau<N - 1u, S>::Triangle(subpatch, uvw);
@@ -199,18 +204,18 @@ namespace BezierMaths
         auto const& triangle = Decasteljau<N, 1>::Triangle(patch, uvw);
         auto const& vertices = triangle.ControlPoints;
 
-        ControlPoint const& p010 = vertices[TriangularIndex<1>(0, 1, 0).To1D()];
-        ControlPoint const& p100 = vertices[TriangularIndex<1>(1, 0, 0).To1D()];
-        ControlPoint const& p001 = vertices[TriangularIndex<1>(0, 0, 1).To1D()];
+        ControlPoint const& p010 = vertices[TriangularIndex<N>::To1D(1, 0)];
+        ControlPoint const& p100 = vertices[TriangularIndex<N>::To1D(0, 0)];
+        ControlPoint const& p001 = vertices[TriangularIndex<N>::To1D(0, 1)];
 
         auto tangent = p100 - p010;
-        tangent.Normalize();
         auto biTangent = p001 - p010;
+        tangent.Normalize();
         biTangent.Normalize();
 
-        auto cross = tangent.Cross(biTangent);
-        cross.Normalize();
-        return { { p100 * uvw.x + p010 * uvw.y + p001 * uvw.z }, cross };
+        auto normal = tangent.Cross(biTangent);
+        normal.Normalize();
+        return { { p100 * uvw.x + p010 * uvw.y + p001 * uvw.z }, normal };
     }
 
     template<unsigned N>
@@ -331,9 +336,9 @@ namespace BezierMaths
             auto const& idx = TriangularIndex<N + 1>::From1D(i);
 
             // Subtraction will yeild negative indices at times ignore such points
-            auto const& term0 = idx.i == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>(idx.i - 1, idx.j, idx.k).To1D()] * idx.i;
-            auto const& term1 = idx.j == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>(idx.i, idx.j - 1, idx.k).To1D()] * idx.j;
-            auto const& term2 = idx.k == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>(idx.i, idx.j, idx.k - 1).To1D()] * idx.k;
+            auto const& term0 = idx.i == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>::To1D(idx.j, idx.k)] * idx.i;
+            auto const& term1 = idx.j == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>::To1D(idx.j - 1, idx.k)] * idx.j;
+            auto const& term2 = idx.k == 0 ? DirectX::SimpleMath::Vector3::Zero : patch.ControlPoints[TriangularIndex<N>::To1D(idx.j, idx.k - 1)] * idx.k;
 
             elevatedPatch.ControlPoints[i] = (term0 + term1 + term2) / (N + 1);
         }
